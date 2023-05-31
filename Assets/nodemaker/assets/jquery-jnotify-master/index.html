@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html xml:lang="fr" lang="fr">
+<head>
+    <title>$.jnotify() Demo</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+    <link type="text/css" href="./jquery.jnotify.css" rel="stylesheet" />
+    <script type="text/javascript" src="./jquery.jnotify.js"></script>
+    <script type="text/javascript">
+    $(function() {
+        $('#jnotify-action').click(function() {
+            var preset = $('#jnotify-preset').val() != '-1' ? $('#jnotify-preset').val() : null;
+            var options = getOptionsForNotify($('#jnotify'));
+            if (preset) {
+                $.jnotify($('#jnotify-message').val(), preset, options);
+            } else {
+                $.jnotify($('#jnotify-message').val(), options);
+            }
+            log('$.jnotify("' + $('#jnotify-message').val() + '"' + (preset ? (', "' + preset + '"') : '') + (! $.isEmptyObject(options) ? ', ' + objectToString(options) : '') + ');');
+        } );
+
+        $('#default-preset-action').click(function() {
+            var presetName = undefined;
+            if (presetName = $('#default-preset-name').val()) {
+                $.jnotify('setDefaultPreset', presetName);
+                $('#jnotify-preset').change();
+                log('$.jnotify("setDefaultPreset", "' + presetName + '");');
+            }
+        } );
+
+        $('#add-preset-action').click(function() {
+            var presetName = undefined;
+            if (presetName = $('#add-preset-name').val()) {
+                var options = getOptionsForNotify($('#add-preset'));
+                $.jnotify('addPreset', presetName, options);
+                updatePresetSelects();
+                $('#add-preset .option, #add-preset-name').val('');
+                log('$.jnotify("addPreset", "' + presetName + '", ' + objectToString(options) + ');');
+            }
+        } );
+
+        $('#update-preset-action').click(function() {
+            var presetName = undefined;
+            if (presetName = $('#update-preset-name').val()) {
+                var options = getOptionsForNotify($('#update-preset'));
+                $.jnotify('updatePreset', presetName, options);
+                updatePresetSelects();
+                $('#update-preset .option').val('');
+                log('$.jnotify("updatePreset", "' + presetName + '", ' + objectToString(options) + ');');
+            }
+        } );
+
+        $('#remove-preset-action').click(function() {
+            var presetName = undefined;
+            if (presetName = $('#remove-preset-name').val()) {
+                $.jnotify('removePreset', presetName);
+                updatePresetSelects();
+                log('$.jnotify("removePreset", "' + presetName + '");');
+            }
+        } );
+
+        $('#jnotify-preset, #update-preset-name, #remove-preset-name, #default-preset-name').change(function() {
+            var $this = $(this);
+            var preset = undefined;
+            var presetName = undefined;
+            if ($this.val() == '-1') {
+                preset = $.jnotify('getDefaultPreset');
+                presetName = $.jnotify('getDefaultPresetName');
+            } else {
+                preset = $.jnotify('getPreset', $this.val());
+                presetName = $this.val();
+            }
+            if (preset) {
+                $this.next('span.description').html(presetName + ': ' + objectToString(preset));
+            }
+        } );
+
+        updatePresetSelects();
+    } );
+
+    var presets = {};
+
+    var updatePresetSelects = function() {
+        presets = $.jnotify('getPresets');
+
+        $('#jnotify-preset, #update-preset-name, #remove-preset-name, #default-preset-name').each(function() {
+            var $this = $(this);
+
+            var options = [];
+            $.each(presets, function(presetName, preset) {
+                options.push($('<option />').val(presetName).text(presetName));
+            } );
+
+            if (this.id == 'jnotify-preset') {
+                options = $.merge([
+                    $('<option />').val('-1').text('default'),
+                ], options);
+            }
+
+            $this.find('option').remove();
+
+            $.each(options, function(id, $option) {
+                $this.append($option);
+            } );
+            $this.find('option:eq(0)').attr('selected', true);
+            $this.change();
+        } );
+    };
+
+    var getOptionsForNotify = function($action) {
+        var options = {};
+        $action.find('.option').each(function() {
+            var $this = $(this);
+            if ($this.val()) {
+                options[$this.attr('name')] = $this.val();
+            }
+        } );
+        return options;
+    };
+
+    var objectToString = function(obj) {
+        var arr = [];
+        $.each(obj, function(key, val) {
+            var next = key + ': ';
+            next += $.isPlainObject(val) ? printObj(val) : '"' + val + '"';
+            arr.push( next );
+        } );
+        return '{' +  arr.join(', ') + '}';
+    };
+
+    var log = function(message) {
+        if (typeof console != 'undefined') {
+            console.log(message);
+        }
+    };
+    </script>
+    <style type="text/css">
+        h1 {
+            text-align: center;
+        }
+        body {
+            font: 11px Verdana, Arial, sans-serif;
+            margin: 0 auto;
+            width: 700px;
+        }
+        .action {
+            border: 1px solid black;
+            padding: 5px;
+            margin-bottom: -1px;
+        }
+        .action .message {
+            font-weight: bold;
+        }
+        .action .description {
+            color: #777;
+            font-weight: normal;
+        }
+    </style>
+</head>
+<body>
+    <a href="https://github.com/jhuet/jquery-jnotify"><img alt="Fork me on GitHub" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" style="position: fixed; top: 0; right: 0; border: 0;"></a>
+    <h1>$.jnotify() Demo</h1>
+    <div class="action" id="jnotify">
+        <p class="message">Display this message as a jnotify :</p>
+        <p><label for="jnotify-message" >Message :</label> <input id="jnotify-message" type="text" value="zOMG jnotify is nice!" style="width:600px" /></p>
+        <p class="message">With</p>
+        <p><label for="jnotify-preset">That preset :</label> <select id="jnotify-preset"></select> <span class="description"></span></p>
+        <p class="message">And / or specific informations <span class="description">that will override preset ones</span></p>
+        <p><label for="jnotify-timeout">Timeout :</label> <input id="jnotify-timeout" name="timeout" class="option" type="text" /> <span class="description">time in seconds after wich the jnotify will disapear ; 0 to make it stay</span></p>
+        <p><label for="jnotify-css">CSS class :</label> <input id="jnotify-css" name="css" class="option" type="text" /> <span class="description">be sure to have a '.jnotify-'+css class set (ie: .jnotify-info, .jnotify-error...)</span></p>
+        <p><input id="jnotify-action" type="button" value="Display" /></p>
+    </div>
+
+    <div class="action" id="default-preset">
+        <p class="message">Set as default preset :</p>
+        <p><label for="default-preset-name">Name :</label> <select id="default-preset-name"></select> <span class="description"></span></p>
+        <p><input id="default-preset-action" type="button" value="Set" /></p>
+    </div>
+
+    <div class="action" id="add-preset">
+        <p class="message">Add a new preset :</p>
+        <p><label for="add-preset-name">Name :</label> <input id="add-preset-name" type="text" /></p>
+        <p><label for="add-preset-timeout">Timeout :</label> <input id="add-preset-timeout" name="timeout" class="option" type="text" /> <span class="description">time in seconds after wich the jnotify will disapear ; 0 to make it stay</span></p>
+        <p><label for="add-preset-type">Type :</label> <input id="add-preset-type" name="type" class="option" type="text" /> <span class="description">may be anything having a meaning for you ; if not set will use the name of the preset</span></p>
+        <p><label for="add-preset-css">CSS class :</label> <input id="add-preset-css" name="css" class="option" type="text" /> <span class="description">be sure to have a '.jnotify-'+css class set ; if not set, uses type value</span></p>
+        <p><input id="add-preset-action" type="button" value="Add" /></p>
+    </div>
+
+    <div class="action" id="update-preset">
+        <p class="message">Update a preset :</p>
+        <p><label for="update-preset-name">Name :</label> <select id="update-preset-name"></select> <span class="description"></span></p>
+        <p><label for="update-preset-timeout">Timeout :</label> <input id="update-preset-timeout" name="timeout" class="option" type="text" /> <span class="description">time in seconds after wich the jnotify will disapear ; 0 to make it stay</span></p>
+        <p><label for="update-preset-type">Type :</label> <input id="update-preset-type" name="type" class="option" type="text" /> <span class="description">may be anything having a meaning for you ; if not set will use the name of the preset</span></p>
+        <p><label for="update-preset-css">CSS class :</label> <input id="update-preset-css" name="css" class="option" type="text" /> <span class="description">be sure to have a '.jnotify-'+css class set ; if not set, uses type value</span></p>
+        <p><input id="update-preset-action" type="button" value="Update" /></p>
+    </div>
+
+    <div class="action" id="remove-preset">
+        <p class="message">Remove a preset :</p>
+        <p><label for="remove-preset-name">Name :</label> <select id="remove-preset-name"></select> <span class="description"></span></p>
+        <p><input id="remove-preset-action" type="button" value="Remove" /></p>
+    </div>
+    <p>If you want to see the commands executed on every actions, open your console (firebug, chrome...).</p>
+</body>
+</html>
