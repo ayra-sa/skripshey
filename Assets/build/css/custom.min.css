@@ -10,6 +10,12 @@
 		url("https://netdna.bootstrapcdn.com/bootstrap/3.0.0/fonts/glyphicons-halflings-regular.svg#glyphicons-halflingsregular")
 			format("svg");
 }
+
+#map {
+	height: 400px;
+	margin-bottom: 40px;
+}
+
 .glyphicon {
 	position: relative;
 	top: 1px;
@@ -4148,7 +4154,7 @@ a.hiddenanchor {
 	place-content: center;
 	align-items: center;
 }
-.registration_form{
+.registration_form {
 	position: absolute;
 	top: 0px;
 	width: 100%;

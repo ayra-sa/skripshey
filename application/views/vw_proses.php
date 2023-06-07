@@ -105,6 +105,11 @@ $active = 'dashboard';
 
       </div>
 
+      <!-- <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                
+              </div> -->
+
     </div>
   </div>
 </div>
@@ -112,94 +117,71 @@ $active = 'dashboard';
 require_once(APPPATH . "views/parts/Footer.php");
 ?>
 
-<!-- leaflet js  -->
-<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
-
-<script>
-  // set lokasi latitude dan longitude, lokasinya kota palembang 
-  var mymap = L.map('mapid').setView([-2.9547949, 104.6929233], 13);
-  //setting maps menggunakan api mapbox bukan google maps, daftar dan dapatkan token      
-  L.tileLayer(
-    'https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibmFiaWxjaGVuIiwiYSI6ImNrOWZzeXh5bzA1eTQzZGxpZTQ0cjIxZ2UifQ.1YMI-9pZhxALpQ_7x2MxHw', {
-      attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-      maxZoom: 20,
-      id: 'mapbox/streets-v11', //menggunakan peta model streets-v11 kalian bisa melihat jenis-jenis peta lainnnya di web resmi mapbox
-      tileSize: 512,
-      zoomOffset: -1,
-      accessToken: 'your.mapbox.access.token'
-    }).addTo(mymap);
-</script>
-
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.js"></script>
 
 <!-- <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCG7FscIk67I9yY_fiyLc7-_1Aoyerf96E&sensor=false&libraries=places" async defer></script> -->
+<!-- <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=places&key=AIzaSyCG7FscIk67I9yY_fiyLc7-_1Aoyerf96E"></script> -->
 <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=places&key=AIzaSyCG7FscIk67I9yY_fiyLc7-_1Aoyerf96E"></script>
 <script type="text/javascript">
-  document.addEventListener('DOMContentLoaded', function() {
+  $(function() {
     var datanormalisasi;
-    var where_field = '';
-    var where_value = '';
-    var table = 'users';
+    $(document).ready(function() {
+      var where_field = '';
+      var where_value = '';
+      var table = 'users';
 
-    fetch('<?= base_url() ?>C_Proses/GetNormalisasiAwal', {
-        method: 'POST',
-        body: JSON.stringify({
-          id: ''
-        }),
-        headers: {
-          'Content-Type': 'application/json'
+      $.ajax({
+        async: false,
+        type: "post",
+        url: "<?= base_url() ?>C_Proses/GetNormalisasiAwal",
+        data: {
+          'id': ''
+        },
+        dataType: "json",
+        success: function(response) {
+          datanormalisasi = response.data;
+          // console.log(response, 'dator')
+          bindGrid(response.data);
         }
-      })
-      .then(response => response.json())
-      .then(data => {
-        datanormalisasi = data.data;
-        bindGrid(data.data);
-      })
-      .catch(error => {
-        console.error(error);
       });
 
-    const btProses = document.getElementById('bt_proses');
+    });
 
-    btProses.addEventListener('click', function() {
-      btProses.textContent = 'Proses, Please wait.....';
-      btProses.disabled = true;
-
-      fetch('<?= base_url() ?>C_Proses/DeleteData', {
-          method: 'POST',
-          body: JSON.stringify({
-            id: ''
-          }),
-          headers: {
-            'Content-Type': 'application/json'
+    $('#bt_proses').click(function() {
+      $('#bt_proses').text('Proses, Please wait.....');
+      $('#bt_proses').attr('disabled', true);
+      $.ajax({
+        async: false,
+        type: "post",
+        url: "<?= base_url() ?>C_Proses/DeleteData",
+        data: {
+          'id': ''
+        },
+        dataType: "json",
+        success: function(responsex) {
+          if (responsex.success == true) {
+            console.log("Done Deleting");
           }
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            console.log('Done Deleting');
-          }
-        })
-        .catch(error => {
-          console.error(error);
-        });
+        }
+      });
 
-      fetch("<?= base_url() ?>C_CentroidAwal/Read", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            id: ""
-          })
-        })
-        .then(response => response.json())
-        .then(response => {
+      $.ajax({
+        async: false,
+        type: "post",
+        url: "<?= base_url() ?>C_CentroidAwal/Read",
+        data: {
+          'id': ''
+        },
+        dataType: "json",
+        success: function(response) {
+          // bindGrid(response.data);
           var html = "";
           var data_Centroid;
           var max_literasi = 7;
           if (response.success == true) {
 
             data_Centroid = response.data;
+            // console.log(data_Centroid);
             for (var itt = 1; itt <= max_literasi; itt++) {
               html += "<h3><b>Iterasi ke " + itt + " </b></h3> <br>"
               html += "Centroid Awal : <br>"
@@ -269,6 +251,9 @@ require_once(APPPATH . "views/parts/Footer.php");
               var hasilarray = [];
 
               for (var i_normal = 0; i_normal < datanormalisasi.length; i_normal++) {
+                // console.log(datanormalisasi[i_normal].ND_LuasPanen - data_Centroid[0].JmlProduksi)
+                // console.log(Math.sqrt(datanormalisasi[i_normal].ND_LuasPanen - data_Centroid[0].JmlProduksi))
+                // console.log(Math.sqrt(Math.pow(datanormalisasi[i_normal].ND_LuasPanen - data_Centroid[0].JmlProduksi,2)))
                 var c1 = Math.sqrt(Math.pow(datanormalisasi[i_normal].ND_Asset - data_Centroid[0].Asset, 2) + Math.pow(datanormalisasi[i_normal].ND_JmlPekerja - data_Centroid[0].JmlPekerja, 2) + Math.pow(datanormalisasi[i_normal].ND_Omset - data_Centroid[0].Omset, 2))
 
                 var c2 = Math.sqrt(Math.pow(datanormalisasi[i_normal].ND_Asset - data_Centroid[1].Asset, 2) + Math.pow(datanormalisasi[i_normal].ND_JmlPekerja - data_Centroid[1].JmlPekerja, 2) + Math.pow(datanormalisasi[i_normal].ND_Omset - data_Centroid[1].Omset, 2))
@@ -378,6 +363,8 @@ require_once(APPPATH . "views/parts/Footer.php");
                 "JmlPekerja": (pekerjaC3 / pekerjaC3_count).toString(),
                 "Omset": (omsetC3 / omsetC3_count).toString()
               })
+              // console.log(temp_array)
+              // console.log(data_Centroid)
               // console.log(arraysEqual(data_Centroid,temp_array))
               if (arraysEqual(data_Centroid, temp_array)) {
                 break;
@@ -387,90 +374,72 @@ require_once(APPPATH . "views/parts/Footer.php");
             }
             // akhir iterasi
 
-            document.getElementById('Hasil').innerHTML = html;
+            $('#Hasil').html(html);
 
-            console.log(hasilarray, 'hasil');
+            console.log(hasilarray);
             for (var i = 0; i < hasilarray.length; i++) {
-              fetch("<?= base_url() ?>C_Proses/addhasil", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json"
-                  },
-                  body: JSON.stringify({
-                    KodeData: hasilarray[i].KodeData,
-                    Keanggotaan: hasilarray[i].Keanggotaan,
-                    iterasi: hasilarray[i].iterasi
-                  })
-                })
-                .then(response => response.json())
-                .then(data => {
-                  console.log(data);
-                })
-                .catch(error => {
-                  console.error("Error:", error);
-                });
+              $.ajax({
+                async: false,
+                type: "post",
+                url: "<?= base_url() ?>C_Proses/addhasil",
+                data: {
+                  'KodeData': hasilarray[i].KodeData,
+                  'Keanggotaan': hasilarray[i].Keanggotaan,
+                  'iterasi': hasilarray[i].iterasi
+                },
+                dataType: "json",
+                success: function(response) {
+                  if (response == true) {
+                    console.log('done')
+                  }
+                }
+              });
             }
 
-            fetch("<?= base_url() ?>C_Proses/getHasil", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                  kelompok: "C1"
-                })
-              })
-              .then(response => response.json())
-              .then(data => {
-                console.log(data, 'the data')
-                bindGridHasil(data);
-              })
-              .catch(error => {
-                console.error("Error:", error);
-              });
+            $.ajax({
+              async: false,
+              type: "post",
+              url: "<?= base_url() ?>C_Proses/getHasil",
+              data: {
+                'kelompok': 'C1'
+              },
+              dataType: "json",
+              success: function(response) {
+                bindGridHasil(response)
+              }
+            });
 
-            fetch("<?= base_url() ?>C_Proses/getHasil", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                  kelompok: "C2"
-                })
-              })
-              .then(response => response.json())
-              .then(data => {
-                bindGridHasil_C2(data);
-              })
-              .catch(error => {
-                console.error("Error:", error);
-              });
+            $.ajax({
+              async: false,
+              type: "post",
+              url: "<?= base_url() ?>C_Proses/getHasil",
+              data: {
+                'kelompok': 'C2'
+              },
+              dataType: "json",
+              success: function(response) {
+                bindGridHasil_C2(response)
+              }
+            });
 
-            fetch("<?= base_url() ?>C_Proses/getHasil", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                  kelompok: "C3"
-                })
-              })
-              .then(response => response.json())
-              .then(data => {
-                bindGridHasil_C3(data);
-              })
-              .catch(error => {
-                console.error("Error:", error);
-              });
+            $.ajax({
+              async: false,
+              type: "post",
+              url: "<?= base_url() ?>C_Proses/getHasil",
+              data: {
+                'kelompok': 'C3'
+              },
+              dataType: "json",
+              success: function(response) {
+                bindGridHasil_C3(response)
+              }
+            });
 
-            const btProses = document.getElementById('bt_proses');
-            btProses.textContent = 'Proses';
-            btProses.disabled = false;
+            $('#bt_proses').text('Proses');
+            $('#bt_proses').attr('disabled', false);
           }
-        })
-        .catch(error => {
-          console.error("Error:", error);
-        });
+        }
+      });
     })
 
     function arraysEqual(a, b) {
@@ -502,16 +471,16 @@ require_once(APPPATH . "views/parts/Footer.php");
 
     }
 
-    const bindGridHasil = (data) => {
-      const gridContainerHasil = document.querySelector("#gridContainerHasil");
-
-      new DevExpress.ui.dxDataGrid(gridContainerHasil, {
+    function bindGridHasil(data) {
+      $("#gridContainerHasil").dxDataGrid({
         allowColumnResizing: true,
         dataSource: data,
         keyExpr: "nama",
         showBorders: true,
         allowColumnReordering: true,
+        allowColumnResizing: true,
         columnAutoWidth: true,
+        showBorders: true,
         paging: {
           enabled: false
         },
@@ -532,19 +501,18 @@ require_once(APPPATH . "views/parts/Footer.php");
           },
         ],
       });
-    };
+    }
 
-    const bindGridHasil_C2 = (data) => {
-      console.log(data)
-      const gridContainerHasil = document.querySelector("#gridContainerHasil_C2");
-
-      new DevExpress.ui.dxDataGrid(gridContainerHasil, {
+    function bindGridHasil_C2(data) {
+      $("#gridContainerHasil_C2").dxDataGrid({
         allowColumnResizing: true,
         dataSource: data,
         keyExpr: "nama",
         showBorders: true,
         allowColumnReordering: true,
+        allowColumnResizing: true,
         columnAutoWidth: true,
+        showBorders: true,
         paging: {
           enabled: false
         },
@@ -565,19 +533,18 @@ require_once(APPPATH . "views/parts/Footer.php");
           },
         ],
       });
-    };
-    
-    const bindGridHasil_C3 = (data) => {
-      console.log(data)
-      const gridContainerHasil = document.querySelector("#gridContainerHasil_C3");
+    }
 
-      new DevExpress.ui.dxDataGrid(gridContainerHasil, {
+    function bindGridHasil_C3(data) {
+      $("#gridContainerHasil_C3").dxDataGrid({
         allowColumnResizing: true,
         dataSource: data,
         keyExpr: "nama",
         showBorders: true,
         allowColumnReordering: true,
+        allowColumnResizing: true,
         columnAutoWidth: true,
+        showBorders: true,
         paging: {
           enabled: false
         },
@@ -598,19 +565,19 @@ require_once(APPPATH . "views/parts/Footer.php");
           },
         ],
       });
-    };
+    }
 
     function bindGrid(data) {
-      console.log(data, 'data')
-      const gridContainer = document.querySelector("#gridContainer");
 
-      new DevExpress.ui.dxDataGrid(gridContainer, {
+      $("#gridContainer").dxDataGrid({
         allowColumnResizing: true,
         dataSource: data,
         keyExpr: "id",
         showBorders: true,
         allowColumnReordering: true,
+        allowColumnResizing: true,
         columnAutoWidth: true,
+        showBorders: true,
         paging: {
           enabled: false
         },
@@ -696,42 +663,35 @@ require_once(APPPATH . "views/parts/Footer.php");
               var field = 'id';
               var value = id;
 
-              fetch("<?= base_url() ?>C_Data/CRUD", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json"
-                  },
-                  body: JSON.stringify({
-                    id: id,
-                    formtype: "delete"
-                  })
-                })
-                .then(response => response.json())
-                .then(data => {
-                  if (data.success) {
-                    Swal.fire({
-                      title: "Deleted!",
-                      text: "Your file has been deleted.",
-                      icon: "success"
-                    }).then(result => {
+              $.ajax({
+                type: 'post',
+                url: '<?= base_url() ?>C_Data/CRUD',
+                data: {
+                  'id': id,
+                  'formtype': 'delete'
+                },
+                dataType: 'json',
+                success: function(response) {
+                  if (response.success == true) {
+                    Swal.fire(
+                      'Deleted!',
+                      'Your file has been deleted.',
+                      'success'
+                    ).then((result) => {
                       location.reload();
                     });
                   } else {
                     Swal.fire({
-                      title: "Woops...",
-                      text: data.message,
-                      icon: "error"
+                      type: 'error',
+                      title: 'Woops...',
+                      text: response.message,
                       // footer: '<a href>Why do I have this issue?</a>'
-                    }).then(result => {
+                    }).then((result) => {
                       location.reload();
                     });
                   }
-                })
-                .catch(error => {
-                  console.error("Error:", error);
-                  location.reload();
-                });
-
+                }
+              });
 
             } else {
               location.reload();
@@ -745,6 +705,9 @@ require_once(APPPATH . "views/parts/Footer.php");
           // console.log(e);
         }
       });
+
+      // add dx-toolbar-after
+      // $('.dx-toolbar-after').append('Tambah Alat untuk di pinjam ');
     }
   });
 </script>

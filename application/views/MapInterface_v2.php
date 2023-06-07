@@ -63,7 +63,7 @@
     <div class="container py-lg-5 py-md-4 py-sm-4 py-3">
       <div class="row">
         <div class="col-lg-12 col-md-12 text-left about-two-grids">
-          <h3 class="title  mb-md-4 mb-sm-3 mb-3">Hasil Pemetaan UMKM Kecamatan Tasikmadu dengan Metode K-Means Clustering</h3>
+          <h3 class="title  mb-md-4 mb-sm-3 mb-3">Hasil adkakska Pemetaan UMKM Kecamatan Tasikmadu dengan Metode K-Means Clustering</h3>
 
           <input type="hidden" name="Alamat" id="Alamat">
           <div id="map-canvas" style="width:100%;height: 600px;"></div>

@@ -64,12 +64,14 @@ $active = 'dashboard';
                   <input type="hidden" name="Koordinat" id="Koordinat">
                 </div>
               </div>
+
               <div class="item form-group">
                 <div class="col-md-12 col-sm-12 ">
                   <!-- <input id="pac-input" class="controls" type="text" placeholder="Search Box"> -->
-                  <div id="map-canvas" style="width:100%;height: 400px;"></div>
+                  <!-- <div id="map-canvas" style="width:100%;height: 400px;"></div> -->
                 </div>
               </div>
+              <div id="map"></div>
               <div class="item" form-group>
                 <button class="btn btn-primary" id="btn_Save">Save</button>
               </div>
@@ -77,6 +79,11 @@ $active = 'dashboard';
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="item form-group">
+      <input type="text" id="addressInput" placeholder="Masukkan alamat" />
+      <button onclick="geocodeAddress()">Cari</button>
     </div>
 
     <div class="row">
@@ -121,114 +128,125 @@ $active = 'dashboard';
 require_once(APPPATH . "views/parts/Footer.php");
 ?>
 
-<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=places&key=AIzaSyCG7FscIk67I9yY_fiyLc7-_1Aoyerf96E"></script>
-<script type="text/javascript">
-  function init() {
-    var map = new google.maps.Map(document.getElementById('map-canvas'), {
-      center: {
-        lat: -7.5591225,
-        lng: 110.7837923
-      },
-      zoom: 12,
-      options: {
-        gestureHandling: 'greedy'
-      }
-    });
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
+<script>
+  const map = L.map('map').setView([-7.56713, 110.8990126], 13);
 
-    var searchBox = new google.maps.places.SearchBox(document.getElementById('Alamat'));
-    // map.controls[google.maps.ControlPosition.TOP_CENTER].push(document.getElementById('pac-input'));
-    google.maps.event.addListener(searchBox, 'places_changed', function() {
-      searchBox.set('map', null);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
 
+  // Tambahkan marker
+  // const marker = L.marker([-8.001467877016337, 110.94236324186754]).addTo(map);
+  // const marker2 = L.marker([-7.996078013095501, 110.94451458390513]).addTo(map);
+  // const marker3 = L.marker([-8.001048128587708, 110.94041378403283]).addTo(map);
 
-      var places = searchBox.getPlaces();
-
-      var bounds = new google.maps.LatLngBounds();
-      var i, place;
-      for (i = 0; place = places[i]; i++) {
-        (function(place) {
-          var marker = new google.maps.Marker({
-
-            position: place.geometry.location
-          });
-          marker.bindTo('map', searchBox, 'map');
-          google.maps.event.addListener(marker, 'map_changed', function() {
-            if (!this.getMap()) {
-              this.unbindAll();
-            }
-          });
-          bounds.extend(place.geometry.location);
-          // console.log(place.geometry.location);
-        }(place));
-
-      }
-      map.fitBounds(bounds);
-      console.log(bounds);
-      searchBox.set('map', map);
-      map.setZoom(Math.min(map.getZoom(), 12));
-
-      map.addListener('click', function(e) {
-        //console.log(e);
-        addMarker(e.latLng);
-      });
-
-      GetLatlong();
-    });
-  }
-
-  function GetLatlong() {
-    var geocoder = new google.maps.Geocoder();
-    var address = document.getElementById('Alamat').value;
-
-    geocoder.geocode({
-      'address': address
-    }, function(results, status) {
-
-      if (status == google.maps.GeocoderStatus.OK) {
-        var latitude = results[0].geometry.location.lat();
-        var longitude = results[0].geometry.location.lng();
-
-        console.log(latitude);
-        console.log(longitude);
-
-        $('#Koordinat').val("" + latitude + "," + longitude + "");
-        // document.getElementById('GPS').value(""+latitude+","+longitude)
-      }
-    });
-  }
+  // Tambahkan popup pada marker
+  // marker.bindPopup("<b>1</b>").openPopup();
+  // marker2.bindPopup("<b>2</b>").openPopup();
+  // marker3.bindPopup("<b>3</b>").openPopup();
 
   function codeAddress(address) {
+    const geocoder = L.Control.Geocoder.nominatim();
+    geocoder.geocode(address, function(results) {
+      console.log(results, results.length)
+      let latitude, longitude, country, county;
+      for (let i = 0; i < results.length; i++) {
+        const location = results[i].center;
+        latitude = location.lat;
+        longitude = location.lng;
+        country = results[i].properties.address.country;
+        county = results[i].properties.address.county;
+        console.log(country, county)
 
-    geocoder.geocode({
-      'address': address
-    }, function(results, status) {
-      console.log(results);
-      var latLng = {
-        lat: results[0].geometry.location.lat(),
-        lng: results[0].geometry.location.lng()
-      };
-      console.log(latLng);
-      if (status == 'OK') {
-        var marker = new google.maps.Marker({
-          position: latLng,
-          map: map
-        });
-        console.log(map);
+        if (country === 'Indonesia' && county === 'Karanganyar') {
+          break;
+        }
+      }
+
+      if (country === 'Indonesia' && county === 'Karanganyar') {
+        addMarker(latitude, longitude);
       } else {
-        alert('Geocode was not successful for the following reason: ' + status);
+        alert('The location is outside the map bounds or not in Indonesia.');
       }
     });
   }
 
-  function addMarker(latLng) {
-    let marker = new google.maps.Marker({
-      map: map,
-      position: latLng,
-      draggable: true
+  function isLocationWithinBounds(latitude, longitude) {
+    const bounds = map.getBounds();
+    const sw = bounds.getSouthWest();
+    const ne = bounds.getNorthEast();
+
+    return (
+      latitude >= sw.lat &&
+      latitude <= ne.lat &&
+      longitude >= sw.lng &&
+      longitude <= ne.lng
+    );
+  }
+
+
+  function getAddressComponents(result) {
+    try {
+      var address = result.properties.address;
+      return address ? address : '';
+    } catch (error) {
+      console.log(error)
+      return '';
+    }
+  }
+
+  function getAddressComponentValue(addressComponents, type) {
+    if (Array.isArray(addressComponents)) {
+      var component = addressComponents.find(function(component) {
+        return component[type] != undefined;
+      });
+
+      return component ? component[type] : '';
+    }
+
+    return '';
+  }
+
+  function addMarker(latitude, longitude) {
+    var marker = L.marker([latitude, longitude], {
+      draggable: false
+    }).addTo(map);
+  }
+
+  function initSearchBox() {
+    var searchBox = L.Control.geocoder().addTo(map);
+    searchBox.on('markgeocode', function(e) {
+      var latLng = e.geocode.center;
+      addMarker(latLng);
     });
   }
-  google.maps.event.addDomListener(window, 'load', init);
+
+  function geocodeAddress() {
+    var address = document.getElementById('addressInput').value;
+    codeAddress(address);
+  }
+
+  const popup = L.popup();
+
+  function onMapClick(e) {
+    console.log(e)
+    popup
+      .setLatLng(e.latlng)
+      .setContent("koordinat : " + e.latlng.toString())
+      .openOn(map);
+
+    document.getElementById('Alamat').value = `${e.latlng.lat}, ${e.latlng.lng}`
+  }
+
+  map.on('click', onMapClick);
+  
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=places&key=AIzaSyCG7FscIk67I9yY_fiyLc7-_1Aoyerf96E"></script>
+<script type="text/javascript">
+  
   $(function() {
     $(document).ready(function() {
       var where_field = '';
@@ -254,7 +272,6 @@ require_once(APPPATH . "views/parts/Footer.php");
 
       e.preventDefault();
       var me = $(this);
-      // alert($('#GPS').val());
       if ($('#GPS').val() != '') {
         $.ajax({
           type: 'post',
@@ -268,7 +285,6 @@ require_once(APPPATH . "views/parts/Footer.php");
                 type: 'success',
                 title: 'Horay..',
                 text: 'Data Berhasil disimpan!',
-                // footer: '<a href>Why do I have this issue?</a>'
               }).then((result) => {
                 location.reload();
               });
@@ -278,9 +294,7 @@ require_once(APPPATH . "views/parts/Footer.php");
                 type: 'error',
                 title: 'Woops...',
                 text: response.message,
-                // footer: '<a href>Why do I have this issue?</a>'
               }).then((result) => {
-                // $('#modal_').modal('show');
                 $('#btn_Save').text('Save');
                 $('#btn_Save').attr('disabled', false);
               });
@@ -317,7 +331,8 @@ require_once(APPPATH . "views/parts/Footer.php");
         dataType: "json",
         success: function(response) {
           $.each(response.data, function(k, v) {
-            console.log(v.KelompokUsaha);
+            // console.log(v.KelompokUsaha, "kusa");
+            alert("okekekeke")
             $('#Nama').val(v.Nama);
             $('#Alamat').val(v.Alamat);
             $('#Koordinat').val(v.Koordinat);
@@ -374,12 +389,12 @@ require_once(APPPATH . "views/parts/Footer.php");
             caption: "Pemilik UMKM",
             allowEditing: false
           },
-          {
-            dataField: "Alamat",
-            caption: "Alamat",
-            allowEditing: false,
-            visible: false,
-          },
+          // {
+          //   dataField: "Alamat",
+          //   caption: "Alamat",
+          //   allowEditing: false,
+          //   visible: false,
+          // },
           {
             dataField: "Asset",
             caption: "Asset",
@@ -401,8 +416,8 @@ require_once(APPPATH . "views/parts/Footer.php");
             allowEditing: false
           },
           {
-            dataField: "Koordinat",
-            caption: "Koordinat",
+            dataField: "Alamat",
+            caption: "Alamat",
             allowEditing: false
           }
         ],
